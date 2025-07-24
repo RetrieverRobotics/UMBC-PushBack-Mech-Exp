@@ -25,12 +25,20 @@ umbc::Robot robot = Robot();
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
-void initialize() {
+pros::Imu imu_sensor(1); // Global or static so it persists
 
+void initialize() {
 	INFO("initializing robot...");
 
 	pros::lcd::initialize();
 
+	// Calibrate IMU (gyro)
+	imu_sensor.reset();
+	while (imu_sensor.is_calibrating()) {
+		pros::delay(20);
+	}
+
+	INFO("IMU calibrated");
 	INFO("robot initialized");
 }
 
@@ -127,8 +135,8 @@ void opcontrol() {
 				pros::lcd::set_text(1, "Autonomous Training Active");
 				robot.train_autonomous(PARTNER_CONTROLLER);
 				pros::lcd::clear();
-    			pros::lcd::set_text(1, "Autonomous Training Complete");
-    			INFO("autonomous training complete");
+				pros::lcd::set_text(1, "Autonomous Training Complete");
+				INFO("autonomous training complete");
 				pros::Task::delay(MSG_DELAY_MS);
 				competition_initialize();
 			} else {

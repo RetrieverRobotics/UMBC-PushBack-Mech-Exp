@@ -7,29 +7,90 @@
  */
 
 #include "api.h"
+#include "pros/adi.hpp"
+#include "pros/misc.h"
+#include "pros/motors.h"
+#include "pros/motors.hpp"
 #include "umbc.h"
+#include "umbc/robot.hpp"
 
+#include <cmath>
 #include <cstdint>
+#include <cstdlib>
+#include <vector>
 
 using namespace pros;
 using namespace umbc;
 using namespace std;
 
-void umbc::Robot::opcontrol() {
+// Example motor port definitions (replace with your actual ports)
+#define FL1 1
+#define FL2 2
+#define FL3 3
+#define FR1 4
+#define FR2 5
+#define FR3 6
+#define ML1 7
+#define ML2 8
+#define ML3 9
+#define MR1 10
+#define MR2 11
+#define MR3 12
 
+void umbc::Robot::opcontrol() {
     // nice names for controllers (do not edit)
     umbc::Controller* controller_master = this->controller_master;
     umbc::Controller* controller_partner = this->controller_partner;
 
-    // initialize motors and sensors
+    // Motor groups for each wheel set
+    std::vector<int8_t> frontLeft{FL1, FL2, FL3};
+    std::vector<int8_t> frontRight{FR1, FR2, FR3};
+    std::vector<int8_t> middleLeft{ML1, ML2, ML3};
+    std::vector<int8_t> middleRight{MR1, MR2, MR3};
+
+    Motor_Group frontLeftGroup(frontLeft);
+    Motor_Group frontRightGroup(frontRight);
+    Motor_Group middleLeftGroup(middleLeft);
+    Motor_Group middleRightGroup(middleRight);
+
+    // Set gearing if needed
+    pros::motor_gearset_e gearColor = pros::E_MOTOR_GEAR_GREEN;
+    frontLeftGroup.set_gearing(gearColor);
+    frontRightGroup.set_gearing(gearColor);
+    middleLeftGroup.set_gearing(gearColor);
+    middleRightGroup.set_gearing(gearColor);
 
 
-    while(1) {
+    extern pros::Imu imu_sensor; // Use the IMU initialized in main.cpp
+    double desired_heading = imu_sensor.get_heading();
 
-        // implement opcontrols
+    while (1) {
+        // Joystick input
+        double x = controller_master->get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
+        double y = -controller_master->get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
+        double turn = controller_master->get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 
+        // Gyro correction
+        double current_heading = imu_sensor.get_heading();
+        double error = desired_heading - current_heading;
+        double kP = 0.05; // Tune this value
+        double correction = error * kP;
 
-        // required loop delay (do not edit)
+        // Apply correction to turn
+        double corrected_turn = turn + correction * 127; // scale correction to joystick range
+
+        // Mecanum drive calculations (adjust as needed for your robot)
+        double fl = y + x + corrected_turn;
+        double fr = y - x - corrected_turn;
+        double ml = y + corrected_turn;
+        double mr = y - corrected_turn;
+
+        // Send velocities to motor groups
+        frontLeftGroup.move_velocity(fl);
+        frontRightGroup.move_velocity(fr);
+        middleLeftGroup.move_velocity(ml);
+        middleRightGroup.move_velocity(mr);
+
         pros::Task::delay(this->opcontrol_delay_ms);
     }
 }
