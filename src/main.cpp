@@ -5,7 +5,7 @@
  * Competition.
  */
 
- #include <iostream>
+#include <iostream>
 
 #include "main.h"
 #include "api.h"
@@ -25,20 +25,24 @@ umbc::Robot robot = Robot();
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
-pros::Imu imu_sensor(1); // Global or static so it persists
 
-void initialize() {
+namespace umbc
+{
+	pros::Imu imu_sensor(1);
+}
+
+void initialize()
+{
 	INFO("initializing robot...");
 
 	pros::lcd::initialize();
-
-	// Calibrate IMU (gyro)
 	imu_sensor.reset();
-	while (imu_sensor.is_calibrating()) {
+	while (imu_sensor.is_calibrating())
+	{
 		pros::delay(20);
 	}
 
-	INFO("IMU calibrated");
+	// INFO("IMU calibrated");
 	INFO("robot initialized");
 }
 
@@ -47,14 +51,16 @@ void initialize() {
  * the VEX Competition Switch, following either autonomous or opcontrol. When
  * the robot is enabled, this task will exit.
  */
-void disabled() {
+void disabled()
+{
 
 	INFO("disabling robot...");
 
 	pros::lcd::clear();
 	pros::lcd::set_text(1, "Robot Disabled");
 
-	if (robot.opcontrol_isListed()) {
+	if (robot.opcontrol_isListed())
+	{
 		robot.opcontrol_stop();
 	}
 
@@ -70,8 +76,9 @@ void disabled() {
  * This task will exit when the robot is enabled and autonomous or opcontrol
  * starts.
  */
-void competition_initialize() {
-	
+void competition_initialize()
+{
+
 	INFO("performing competition initialization...");
 
 	pros::lcd::clear();
@@ -91,7 +98,8 @@ void competition_initialize() {
  * will be stopped. Re-enabling the robot will restart the task, not re-start it
  * from where it left off.
  */
-void autonomous() {
+void autonomous()
+{
 
 	INFO("performing autonomous routine...");
 
@@ -99,7 +107,7 @@ void autonomous() {
 	pros::lcd::set_text(1, "Autonomous Active");
 	robot.autonomous(PARTNER_CONTROLLER);
 	pros::lcd::clear();
-	
+
 	INFO("autonomous routine completed");
 }
 
@@ -116,22 +124,27 @@ void autonomous() {
  * operator control task will be stopped. Re-enabling the robot will restart the
  * task, not resume it from where it left off.
  */
-void opcontrol() {
+void opcontrol()
+{
 
-	if (robot.opcontrol_isListed()) {
+	if (robot.opcontrol_isListed())
+	{
 		robot.opcontrol_stop();
 	}
 
-	while (1) {
+	while (1)
+	{
 		pros::lcd::clear();
 
 		INFO("setting robot controllers to physical controllers...");
 		robot.set_controllers_to_physical();
 		INFO("robot controllers set to physical controllers");
 
-		if (MODE_TRAIN_AUTONOMOUS == robot.get_mode()) {
+		if (MODE_TRAIN_AUTONOMOUS == robot.get_mode())
+		{
 			INFO("autonomous training starting...");
-			if (pros::usd::is_installed()) {
+			if (pros::usd::is_installed())
+			{
 				pros::lcd::set_text(1, "Autonomous Training Active");
 				robot.train_autonomous(PARTNER_CONTROLLER);
 				pros::lcd::clear();
@@ -139,7 +152,9 @@ void opcontrol() {
 				INFO("autonomous training complete");
 				pros::Task::delay(MSG_DELAY_MS);
 				competition_initialize();
-			} else {
+			}
+			else
+			{
 				ERROR("autonomous training failed; no SD Card detected");
 				pros::lcd::clear();
 				pros::lcd::set_text(1, "No SD Card Detected!");
@@ -147,7 +162,9 @@ void opcontrol() {
 				pros::lcd::set_text(4, "SD Card.");
 				return;
 			}
-		} else {
+		}
+		else
+		{
 			pros::lcd::set_text(1, "Opcontrol Active");
 			INFO("opcontrol active");
 			robot.opcontrol();
