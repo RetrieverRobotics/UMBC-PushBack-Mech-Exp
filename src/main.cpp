@@ -33,17 +33,7 @@ namespace umbc
 
 void initialize()
 {
-	INFO("initializing robot...");
-
 	pros::lcd::initialize();
-	imu_sensor.reset();
-	while (imu_sensor.is_calibrating())
-	{
-		pros::delay(20);
-	}
-
-	// INFO("IMU calibrated");
-	INFO("robot initialized");
 }
 
 /**
