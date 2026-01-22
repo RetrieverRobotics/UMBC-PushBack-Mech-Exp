@@ -24,23 +24,25 @@ using namespace umbc;
 using namespace std;
 
 // Example motor port definitions (replace with your actual ports)
-#define FL1 1
-#define FL2 -2
-#define FL3 3
-#define FR1 4
-#define FR2 -5
-#define FR3 6
-#define BL1 7
-#define BL2 -8
-#define BL3 9
-#define BR1 10
-#define BR2 -11
-#define BR3 12
-#define i1 13
-#define i2 14
-#define i3 15
-#define i4 16
-#define i5 -17
+#define FL1 -1
+#define FL2 2
+#define FL3 -3
+#define FR1 10
+#define FR2 -9
+#define FR3 8
+#define BL1 -11
+#define BL2 12
+#define BL3 -13
+#define BR1 20
+#define BR2 -19
+#define BR3 18
+#define i1 100
+#define i2 90
+#define i3 80
+#define i4 70
+#define i5 60
+#define i6 7
+#define i7 4
 #define JOYSTICK_MAX 127.0
 #define gearMult 600
 double lf, rf, lb, rb;
@@ -64,18 +66,28 @@ void umbc::Robot::opcontrol()
     std::vector<int8_t> frontLeft{FL1, FL2, FL3};
     std::vector<int8_t> frontRight{FR1, FR2, FR3};
     std::vector<int8_t> backLeft{BL1, BL2, BL3};
-    std::vector<int8_t> backRight{BR1, BR2, };
+    std::vector<int8_t> backRight{BR1, BR2, BR3};
     // Create motor groups
     Motor_Group frontLeftGroup(frontLeft);
     Motor_Group frontRightGroup(frontRight);
     Motor_Group backLeftGroup(backLeft);
     Motor_Group backRightGroup(backRight);
+    
+    //Pneumatics
+    pros::ADIPort right (1, E_ADI_DIGITAL_OUT);
+    pros::ADIPort left (2, E_ADI_DIGITAL_OUT);
+    frontLeftGroup.set_brake_modes(pros::E_MOTOR_BRAKE_BRAKE);
+    frontRightGroup.set_brake_modes(pros::E_MOTOR_BRAKE_BRAKE);
+    backLeftGroup.set_brake_modes(pros::E_MOTOR_BRAKE_BRAKE);
+    backRightGroup.set_brake_modes(pros::E_MOTOR_BRAKE_BRAKE);
     // Intake motors
     pros::Motor ig1(i1);
     pros::Motor ig2(i2);
     pros::Motor ig3(i3);
     pros::Motor ig4(i4);
     pros::Motor ig5(i5);
+    pros::Motor ig6(i6);
+    pros::Motor ig7(i7);
     // Set gearing if needed
     pros::motor_gearset_e gearColor = pros::E_MOTOR_GEAR_BLUE;
     frontLeftGroup.set_gearing(gearColor);
@@ -97,17 +109,17 @@ void umbc::Robot::opcontrol()
         y = pow((y/JOYSTICK_MAX),3);
         turn = pow((turn/JOYSTICK_MAX),3);
         
-        // calculate motor velocities
-        lf = (y - x + turn);
-        rf = (y - x - turn);
-        lb = (y + x + turn);
-        rb = (y + x - turn);
+        // calculate motor velocities (mecanum mixing)
+        lf = (y - x - turn);
+        rf = (y + x + turn);
+        lb = (y + x - turn);
+        rb = (y - x + turn);
         // Normalize wheel speeds
         frontRightGroup.move_velocity(rf * gearMult);
         backRightGroup.move_velocity(rb * gearMult);
         frontLeftGroup.move_velocity(lf * gearMult);
         backLeftGroup.move_velocity(lb * gearMult);
-       // Intake controls  
+        // Intake controls  
         if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L2))
         {
             if (iState == intakeState::INTAKE)
@@ -192,6 +204,21 @@ void umbc::Robot::opcontrol()
                 ig4.move_velocity(600);
                 ig5.move_velocity(600);   
             }
+        }
+        if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP))
+        {
+            right.set_value(true);
+            left.set_value(true);
+            ig7.move_velocity(600);
+            ig6.move_velocity(-600);
+
+        }
+        if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN))
+        {
+            right.set_value(false);
+            left.set_value(false);
+            ig7.move_velocity(0);
+            ig6.move_velocity(-0);
         }
         // Delay for opcontrol loop
         pros::Task::delay(this->opcontrol_delay_ms);
