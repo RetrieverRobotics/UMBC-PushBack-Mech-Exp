@@ -24,25 +24,25 @@ using namespace umbc;
 using namespace std;
 
 // Example motor port definitions (replace with your actual ports)
-#define FL1 -1
-#define FL2 2
-#define FL3 -3
-#define FR1 10
-#define FR2 -9
-#define FR3 8
-#define BL1 -11
-#define BL2 12
-#define BL3 -13
+#define FL1 3
+#define FL2 -1
+#define FL3 2
+#define FR1 8
+#define FR2 -10
+#define FR3 9
+#define BL1 11
+#define BL2 -12
+#define BL3 13
 #define BR1 20
 #define BR2 -19
 #define BR3 18
-#define i1 100
-#define i2 90
-#define i3 80
-#define i4 70
-#define i5 60
-#define i6 7
-#define i7 4
+#define i1 -17
+#define i2 5
+#define i3 7
+#define i4 4
+#define i5 6
+#define i6 70
+#define i7 40
 #define JOYSTICK_MAX 127.0
 #define gearMult 600
 double lf, rf, lb, rb;
@@ -134,11 +134,11 @@ void umbc::Robot::opcontrol()
             else
             {
                 iState = intakeState::INTAKE;
-                ig1.move_velocity(600);
-                ig2.move_velocity(600);
-                ig3.move_velocity(600);
-                ig4.move_velocity(600);
-                ig5.move_velocity(-600);                
+                ig1.move_velocity(-600);
+                ig2.move_velocity(-600);
+                ig3.move_velocity(-600);
+                ig4.move_velocity(-600);
+                ig5.move_velocity(600);                
             }
         }
         if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L1))
@@ -155,9 +155,9 @@ void umbc::Robot::opcontrol()
             else
             {                
                 iState = intakeState::SCORING_BOTTOM;
-                ig1.move_velocity(-600);
-                ig2.move_velocity(-600);
-                ig3.move_velocity(600);
+                ig1.move_velocity(600);
+                ig2.move_velocity(600);
+                ig3.move_velocity(-600);
                 ig4.move_velocity(0);
                 ig5.move_velocity(0);
             }
@@ -176,10 +176,10 @@ void umbc::Robot::opcontrol()
             else
             {
                 iState = intakeState::SCORING_MID;
-                ig1.move_velocity(-600);
-                ig2.move_velocity(600);
-                ig3.move_velocity(600);
-                ig4.move_velocity(-600);
+                ig1.move_velocity(600);
+                ig2.move_velocity(-600);
+                ig3.move_velocity(-600);
+                ig4.move_velocity(600);
                 ig5.move_velocity(0);
             }
         }
@@ -198,11 +198,11 @@ void umbc::Robot::opcontrol()
             else
             {
                 iState = intakeState::SCORING_TOP;
-                ig1.move_velocity(-600);
-                ig2.move_velocity(600);
-                ig3.move_velocity(600);
-                ig4.move_velocity(600);
-                ig5.move_velocity(600);   
+                ig1.move_velocity(600);
+                ig2.move_velocity(-600);
+                ig3.move_velocity(-600);
+                ig4.move_velocity(-600);
+                ig5.move_velocity(-600);   
             }
         }
         if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP))
