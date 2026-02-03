@@ -29,11 +29,13 @@ umbc::Robot robot = Robot();
 namespace umbc
 {
 	pros::Imu imu_sensor(1);
+	pros::Optical optical_sensor(OPTICAL_PORT);
 }
 
 void initialize()
 {
 	pros::lcd::initialize();
+	optical_sensor.set_led_pwm(100);
 }
 
 /**
