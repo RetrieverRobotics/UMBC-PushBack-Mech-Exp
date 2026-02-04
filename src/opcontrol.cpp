@@ -89,7 +89,7 @@ static void set_intake_mode(intakeState &iState,
                             pros::Motor &ig5)
 {
     iState = intakeState::INTAKE;
-    ig1.move_velocity(-600);
+    ig1.move_velocity(-600 );
     ig2.move_velocity(-600);
     ig3.move_velocity(-600);
     ig4.move_velocity(-600);
@@ -212,7 +212,7 @@ void umbc::Robot::opcontrol()
     ig5.set_gearing(intakeGearColor);
     ig6.set_gearing(intakeGearColor);
     ig7.set_gearing(intakeGearColor);
-
+    ig1.set_current_limit(250);
     // Optical sensor and ball tracking
     std::queue<ball> ballQueue;
     teamColor teamcolor = teamColor::BLUE;
@@ -231,7 +231,7 @@ void umbc::Robot::opcontrol()
         // Joystick input
         double x = controller_master->get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
         double y = -controller_master->get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
-        double turn = controller_master->get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+        double turn = -controller_master->get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 
         // Normalize joystick
         x /= JOYSTICK_MAX;
@@ -243,19 +243,19 @@ void umbc::Robot::opcontrol()
         y = y * y * y;
         turn = turn * turn * turn;
 
-        double lf = y + x + turn;
-        double rf = y - x - turn;
-        double lb = y - x + turn;
-        double rb = y + x - turn;
+        lf = (y - x + turn);
+        rf = (y + x - turn);
+        lb = (y + x + turn);
+        rb = (y - x - turn);
 
         // Normalize
-        double maxVal = std::max({fabs(lf), fabs(rf), fabs(lb), fabs(rb)});
-        if (maxVal > 1.0) {
-            lf /= maxVal;
-            rf /= maxVal;
-            lb /= maxVal;
-            rb /= maxVal;
-        }
+        // double maxVal = std::max({fabs(lf), fabs(rf), fabs(lb), fabs(rb)});
+        // if (maxVal > 1.0) {
+        //     lf /= maxVal;
+        //     rf /= maxVal;
+        //     lb /= maxVal;
+        //     rb /= maxVal;
+        // }
 
         // Drive
         frontLeftGroup.move_velocity(lf * gearMult);
@@ -299,15 +299,15 @@ void umbc::Robot::opcontrol()
         if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
             right.set_value(true);
             left.set_value(true);
-            ig7.move_velocity(600);
-            ig6.move_velocity(-600);
+            ig7.move_velocity(0);
+            ig6.move_velocity(-0);
         }
 
         if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN)) {
             right.set_value(false);
             left.set_value(false);
-            ig7.move_velocity(0);
-            ig6.move_velocity(0);
+            ig7.move_velocity(600);
+            ig6.move_velocity(-600);
         }
 
         // Read optical sensor hue value
@@ -322,16 +322,16 @@ void umbc::Robot::opcontrol()
                 ballQueue.push({teamColor::BLUE, pros::millis()});
             }
             // Process queued balls after 500ms delay
+            // Only act on optical detections while in INTAKE mode so scoring motor states
+            // aren't overridden by sensor events.
             while (!ballQueue.empty() && (pros::millis() - ballQueue.front().timeDetected) > intakeSensorDelay) {
-                // Sort balls by team color and adjust intake accordingly
-                if (ballQueue.front().color != teamcolor) {
-                    if (iState == intakeState::INTAKE) {
-                        currState = intakeState::INTAKE;
+                if (iState == intakeState::INTAKE) {
+                    // Sort balls by team color and adjust intake accordingly
+                    if (ballQueue.front().color != teamcolor) {
+                        // Opponent ball detected: drive eject/aux motor to expel
                         ig5.move_velocity(-600);
-                    }
-                } else {
-                    if (currState == intakeState::INTAKE) {
-                        currState = intakeState::INTAKE;
+                    } else {
+                        // Friendly ball detected: ensure intake motors run
                         set_intake_mode(iState, ig1, ig2, ig3, ig4, ig5);
                     }
                 }
@@ -339,7 +339,14 @@ void umbc::Robot::opcontrol()
             }
         }
 
-        // Control loop delay (ms)
+        if(controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT)){
+            if(teamcolor == teamColor::RED){
+                teamcolor = teamColor::BLUE;
+            } else {
+                teamcolor = teamColor::RED;
+            }
+        }
+        //Control loop delay (ms)
         pros::Task::delay(this->opcontrol_delay_ms);
     }
 }
