@@ -5,7 +5,7 @@
  * parameters to the opcontrol function when referencing
  * the master V5 controller or partner V5 controller.
  */
-//#TODO: Track Intaked balls to set a maximum of 14 balls in the robot at once, and to prevent ejection of friendly balls when opponent balls are detected with the optical sensor.
+
 #include "api.h"
 #include "pros/adi.hpp"
 #include "pros/misc.h"
@@ -22,6 +22,7 @@
 using namespace pros;
 using namespace umbc;
 using namespace std;
+
 // Motor port definitions for chassis (FL=front-left, FR=front-right, BL=back-left, BR=back-right)
 #define FL1 -3
 #define FL2 1
@@ -103,8 +104,8 @@ static void set_cycle_mode(intakeState &iState,
                             pros::Motor &ig4,
                             pros::Motor &ig5)
 {
-    iState = intakeState::CYCLE;
-    ig1.move_velocity(600);
+    iState = intakeState::INTAKE;
+    ig1.move_velocity(600 );
     ig2.move_velocity(-600);
     ig3.move_velocity(-600);
     ig4.move_velocity(-600);
@@ -227,18 +228,16 @@ void umbc::Robot::opcontrol()
     ig5.set_gearing(intakeGearColor);
     ig6.set_gearing(intakeGearColor);
     ig7.set_gearing(intakeGearColor);
-    ig1.set_current_limit(250);
-
+    ig1.set_current_limit(450);
     // Optical sensor and ball tracking
     std::queue<ball> ballQueue;
-    std::queue<ball> currentBalls;
     teamColor teamcolor = teamColor::BLUE;
     pros::Optical optical_sensor(OPTICAL_PORT);
     intakeState currState = intakeState::OFF;
     int colorValue = 100;
     intakeState iState = intakeState::OFF;
     optical_sensor.set_led_pwm(100);
-    bool disableSort = false;
+    bool sortDisabled = false;
     
     // Pneumatics
     pros::ADIPort right(1, E_ADI_DIGITAL_OUT);
@@ -282,7 +281,7 @@ void umbc::Robot::opcontrol()
         backRightGroup.move_velocity(rb * gearMult);
 
         // Button input handling: toggle intake/scoring modes
-        if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L2) && currentBalls.size() < 14) {
+        if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L2)) {
             if (iState == intakeState::INTAKE) {
                 set_off_mode(iState, ig1, ig2, ig3, ig4, ig5);
             } else {
@@ -314,21 +313,11 @@ void umbc::Robot::opcontrol()
             }
         }
 
-        if(controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X)) {
-            set_cycle_mode(iState, ig1, ig2, ig3, ig4, ig5);
-        } else{
-            set_off_mode(iState, ig1, ig2, ig3, ig4, ig5);
-        }
-
-        if(controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)) {
-            disableSort = !disableSort;
-        }
-
         if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
             right.set_value(true);
             left.set_value(true);
-            ig7.move_velocity(0);
-            ig6.move_velocity(-0);
+            ig7.move_velocity(600);
+            ig6.move_velocity(-600);
         }
 
         if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN)) {
@@ -336,6 +325,18 @@ void umbc::Robot::opcontrol()
             left.set_value(false);
             ig7.move_velocity(600);
             ig6.move_velocity(-600);
+        }
+
+        if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X)) {
+            if (iState == intakeState::CYCLE) {
+                set_off_mode(iState, ig1, ig2, ig3, ig4, ig5);
+            } else {
+                set_cycle_mode(iState, ig1, ig2, ig3, ig4, ig5);
+            }
+        }
+
+        if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)) {
+            sortDisabled = !sortDisabled;
         }
 
         // Read optical sensor hue value
@@ -352,22 +353,30 @@ void umbc::Robot::opcontrol()
             // Process queued balls after 500ms delay
             // Only act on optical detections while in INTAKE mode so scoring motor states
             // aren't overridden by sensor events.
-            while ((!disableSort && iState != intakeState::CYCLE) && !ballQueue.empty() && (pros::millis() - ballQueue.front().timeDetected) > intakeSensorDelay) {
-                if (iState == intakeState::INTAKE or iState == intakeState::CYCLE) {
+            if(!sortDisabled){
+            while (!ballQueue.empty() && (pros::millis() - ballQueue.front().timeDetected) > intakeSensorDelay) {
+                if (iState == intakeState::INTAKE) {
                     // Sort balls by team color and adjust intake accordingly
                     if (ballQueue.front().color != teamcolor) {
                         // Opponent ball detected: drive eject/aux motor to expel
                         ig5.move_velocity(-600);
                     } else {
                         // Friendly ball detected: ensure intake motors run
-                        if(iState == intakeState::INTAKE) {
-                            set_intake_mode(iState, ig1, ig2, ig3, ig4, ig5);
-                        } else if (iState == intakeState::CYCLE) {
+                        set_intake_mode(iState, ig1, ig2, ig3, ig4, ig5);
+                    }
+                }
+                else if(iState == intakeState::CYCLE){
+                    if (ballQueue.front().color != teamcolor) {
+                        // Opponent ball detected: drive eject/aux motor to expel
+                        ig5.move_velocity(-600);
+                    } else {
+                        // Friendly ball detected: ensure intake motors run
                         set_cycle_mode(iState, ig1, ig2, ig3, ig4, ig5);
                     }
                 }
                 ballQueue.pop();
             }
+        }
         }
 
         if(controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT)){
