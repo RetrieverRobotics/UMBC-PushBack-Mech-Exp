@@ -50,10 +50,11 @@ using namespace std;
 #define driveGearColor pros::E_MOTOR_GEAR_BLUE 
 #define intakeSensorDelay 500
 #define intakeGearColor pros::E_MOTOR_GEAR_GREEN
+#define defaultColor teamColor::RED
 
 #define blue make_pair(200, 255)
 #define red make_pair(1, 30)
-
+ 
 double lf, rf, lb, rb;
 
 // Enumeration for intake/scoring modes
@@ -104,7 +105,7 @@ static void set_cycle_mode(intakeState &iState,
                             pros::Motor &ig4,
                             pros::Motor &ig5)
 {
-    iState = intakeState::INTAKE;
+    iState = intakeState::CYCLE;
     ig1.move_velocity(600 );
     ig2.move_velocity(-600);
     ig3.move_velocity(-600);
@@ -228,10 +229,10 @@ void umbc::Robot::opcontrol()
     ig5.set_gearing(intakeGearColor);
     ig6.set_gearing(intakeGearColor);
     ig7.set_gearing(intakeGearColor);
-    ig1.set_current_limit(450);
+    ig1.set_current_limit(750);
     // Optical sensor and ball tracking
     std::queue<ball> ballQueue;
-    teamColor teamcolor = teamColor::BLUE;
+    teamColor teamcolor = defaultColor;
     pros::Optical optical_sensor(OPTICAL_PORT);
     intakeState currState = intakeState::OFF;
     int colorValue = 100;
@@ -339,7 +340,8 @@ void umbc::Robot::opcontrol()
             sortDisabled = !sortDisabled;
         }
 
-        // Read optical sensor hue value
+        //Read optical sensor hue value
+        
         {
             colorValue = optical_sensor.get_hue();
 
@@ -368,6 +370,7 @@ void umbc::Robot::opcontrol()
                 else if(iState == intakeState::CYCLE){
                     if (ballQueue.front().color != teamcolor) {
                         // Opponent ball detected: drive eject/aux motor to expel
+                        set_cycle_mode(iState, ig1, ig2, ig3, ig4, ig5);
                         ig5.move_velocity(-600);
                     } else {
                         // Friendly ball detected: ensure intake motors run
