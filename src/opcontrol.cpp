@@ -191,10 +191,10 @@ void umbc::Robot::opcontrol()
     std::vector<int8_t> backRight{BR1, BR2, BR3};
 
     // Initialize motor groups from ports
-    Motor_Group frontLeftGroup(frontLeft);
-    Motor_Group frontRightGroup(frontRight);
-    Motor_Group backLeftGroup(backLeft);
-    Motor_Group backRightGroup(backRight);
+    MotorGroup frontLeftGroup(frontLeft);
+    MotorGroup frontRightGroup(frontRight);
+    MotorGroup backLeftGroup(backLeft);
+    MotorGroup backRightGroup(backRight);
     pros::Motor ig1(i1);
     pros::Motor ig2(i2);
     pros::Motor ig3(i3);
@@ -204,10 +204,10 @@ void umbc::Robot::opcontrol()
     pros::Motor ig7(i7);
 
     // Configure motor brake modes
-    frontLeftGroup.set_brake_modes(pros::E_MOTOR_BRAKE_BRAKE);
-    frontRightGroup.set_brake_modes(pros::E_MOTOR_BRAKE_BRAKE);
-    backLeftGroup.set_brake_modes(pros::E_MOTOR_BRAKE_BRAKE);
-    backRightGroup.set_brake_modes(pros::E_MOTOR_BRAKE_BRAKE);
+    frontLeftGroup.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    frontRightGroup.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    backLeftGroup.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    backRightGroup.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
     ig1.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
     ig2.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
     ig3.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
