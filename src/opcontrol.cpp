@@ -50,16 +50,18 @@ using namespace std;
 #define driveGearColor pros::E_MOTOR_GEAR_BLUE 
 #define intakeSensorDelay 500
 #define intakeGearColor pros::E_MOTOR_GEAR_GREEN
+#define defaultColor teamColor::RED
 
 #define blue make_pair(200, 255)
 #define red make_pair(1, 30)
-
+ 
 double lf, rf, lb, rb;
 
 // Enumeration for intake/scoring modes
 enum class intakeState
 {
     INTAKE,
+    CYCLE,
     SCORING_BOTTOM,
     SCORING_MID,
     SCORING_TOP,
@@ -89,7 +91,22 @@ static void set_intake_mode(intakeState &iState,
                             pros::Motor &ig5)
 {
     iState = intakeState::INTAKE;
-    ig1.move_velocity(-600);
+    ig1.move_velocity(-600 );
+    ig2.move_velocity(-600);
+    ig3.move_velocity(-600);
+    ig4.move_velocity(-600);
+    ig5.move_velocity(600);
+}
+
+static void set_cycle_mode(intakeState &iState,
+                            pros::Motor &ig1,
+                            pros::Motor &ig2,
+                            pros::Motor &ig3,
+                            pros::Motor &ig4,
+                            pros::Motor &ig5)
+{
+    iState = intakeState::CYCLE;
+    ig1.move_velocity(600 );
     ig2.move_velocity(-600);
     ig3.move_velocity(-600);
     ig4.move_velocity(-600);
@@ -174,10 +191,10 @@ void umbc::Robot::opcontrol()
     std::vector<int8_t> backRight{BR1, BR2, BR3};
 
     // Initialize motor groups from ports
-    Motor_Group frontLeftGroup(frontLeft);
-    Motor_Group frontRightGroup(frontRight);
-    Motor_Group backLeftGroup(backLeft);
-    Motor_Group backRightGroup(backRight);
+    MotorGroup frontLeftGroup(frontLeft);
+    MotorGroup frontRightGroup(frontRight);
+    MotorGroup backLeftGroup(backLeft);
+    MotorGroup backRightGroup(backRight);
     pros::Motor ig1(i1);
     pros::Motor ig2(i2);
     pros::Motor ig3(i3);
@@ -187,10 +204,10 @@ void umbc::Robot::opcontrol()
     pros::Motor ig7(i7);
 
     // Configure motor brake modes
-    frontLeftGroup.set_brake_modes(pros::E_MOTOR_BRAKE_BRAKE);
-    frontRightGroup.set_brake_modes(pros::E_MOTOR_BRAKE_BRAKE);
-    backLeftGroup.set_brake_modes(pros::E_MOTOR_BRAKE_BRAKE);
-    backRightGroup.set_brake_modes(pros::E_MOTOR_BRAKE_BRAKE);
+    frontLeftGroup.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    frontRightGroup.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    backLeftGroup.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    backRightGroup.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
     ig1.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
     ig2.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
     ig3.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
@@ -212,15 +229,16 @@ void umbc::Robot::opcontrol()
     ig5.set_gearing(intakeGearColor);
     ig6.set_gearing(intakeGearColor);
     ig7.set_gearing(intakeGearColor);
-
+    ig1.set_current_limit(750);
     // Optical sensor and ball tracking
     std::queue<ball> ballQueue;
-    teamColor teamcolor = teamColor::BLUE;
+    teamColor teamcolor = defaultColor;
     pros::Optical optical_sensor(OPTICAL_PORT);
     intakeState currState = intakeState::OFF;
     int colorValue = 100;
     intakeState iState = intakeState::OFF;
     optical_sensor.set_led_pwm(100);
+    bool sortDisabled = false;
     
     // Pneumatics
     pros::ADIPort right(1, E_ADI_DIGITAL_OUT);
@@ -231,7 +249,7 @@ void umbc::Robot::opcontrol()
         // Joystick input
         double x = controller_master->get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
         double y = -controller_master->get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
-        double turn = controller_master->get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+        double turn = -controller_master->get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 
         // Normalize joystick
         x /= JOYSTICK_MAX;
@@ -243,19 +261,19 @@ void umbc::Robot::opcontrol()
         y = y * y * y;
         turn = turn * turn * turn;
 
-        double lf = y + x + turn;
-        double rf = y - x - turn;
-        double lb = y - x + turn;
-        double rb = y + x - turn;
+        lf = (y - x + turn);
+        rf = (y + x - turn);
+        lb = (y + x + turn);
+        rb = (y - x - turn);
 
         // Normalize
-        double maxVal = std::max({fabs(lf), fabs(rf), fabs(lb), fabs(rb)});
-        if (maxVal > 1.0) {
-            lf /= maxVal;
-            rf /= maxVal;
-            lb /= maxVal;
-            rb /= maxVal;
-        }
+        // double maxVal = std::max({fabs(lf), fabs(rf), fabs(lb), fabs(rb)});
+        // if (maxVal > 1.0) {
+        //     lf /= maxVal;
+        //     rf /= maxVal;
+        //     lb /= maxVal;
+        //     rb /= maxVal;
+        // }
 
         // Drive
         frontLeftGroup.move_velocity(lf * gearMult);
@@ -306,11 +324,24 @@ void umbc::Robot::opcontrol()
         if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN)) {
             right.set_value(false);
             left.set_value(false);
-            ig7.move_velocity(0);
-            ig6.move_velocity(0);
+            ig7.move_velocity(600);
+            ig6.move_velocity(-600);
         }
 
-        // Read optical sensor hue value
+        if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X)) {
+            if (iState == intakeState::CYCLE) {
+                set_off_mode(iState, ig1, ig2, ig3, ig4, ig5);
+            } else {
+                set_cycle_mode(iState, ig1, ig2, ig3, ig4, ig5);
+            }
+        }
+
+        if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)) {
+            sortDisabled = !sortDisabled;
+        }
+
+        //Read optical sensor hue value
+        
         {
             colorValue = optical_sensor.get_hue();
 
@@ -322,24 +353,43 @@ void umbc::Robot::opcontrol()
                 ballQueue.push({teamColor::BLUE, pros::millis()});
             }
             // Process queued balls after 500ms delay
+            // Only act on optical detections while in INTAKE mode so scoring motor states
+            // aren't overridden by sensor events.
+            if(!sortDisabled){
             while (!ballQueue.empty() && (pros::millis() - ballQueue.front().timeDetected) > intakeSensorDelay) {
-                // Sort balls by team color and adjust intake accordingly
-                if (ballQueue.front().color != teamcolor) {
-                    if (iState == intakeState::INTAKE) {
-                        currState = intakeState::INTAKE;
+                if (iState == intakeState::INTAKE) {
+                    // Sort balls by team color and adjust intake accordingly
+                    if (ballQueue.front().color != teamcolor) {
+                        // Opponent ball detected: drive eject/aux motor to expel
                         ig5.move_velocity(-600);
-                    }
-                } else {
-                    if (currState == intakeState::INTAKE) {
-                        currState = intakeState::INTAKE;
+                    } else {
+                        // Friendly ball detected: ensure intake motors run
                         set_intake_mode(iState, ig1, ig2, ig3, ig4, ig5);
+                    }
+                }
+                else if(iState == intakeState::CYCLE){
+                    if (ballQueue.front().color != teamcolor) {
+                        // Opponent ball detected: drive eject/aux motor to expel
+                        set_cycle_mode(iState, ig1, ig2, ig3, ig4, ig5);
+                        ig5.move_velocity(-600);
+                    } else {
+                        // Friendly ball detected: ensure intake motors run
+                        set_cycle_mode(iState, ig1, ig2, ig3, ig4, ig5);
                     }
                 }
                 ballQueue.pop();
             }
         }
+        }
 
-        // Control loop delay (ms)
+        if(controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT)){
+            if(teamcolor == teamColor::RED){
+                teamcolor = teamColor::BLUE;
+            } else {
+                teamcolor = teamColor::RED;
+            }
+        }
+        //Control loop delay (ms)
         pros::Task::delay(this->opcontrol_delay_ms);
     }
 }
