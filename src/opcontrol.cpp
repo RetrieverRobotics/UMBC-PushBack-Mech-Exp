@@ -205,10 +205,10 @@ void umbc::Robot::opcontrol()
     pros::Motor ig7(i7);
 
     // Configure motor brake modes
-    frontLeftGroup.set_brake_modes(pros::E_MOTOR_BRAKE_BRAKE);
-    frontRightGroup.set_brake_modes(pros::E_MOTOR_BRAKE_BRAKE);
-    backLeftGroup.set_brake_modes(pros::E_MOTOR_BRAKE_BRAKE);
-    backRightGroup.set_brake_modes(pros::E_MOTOR_BRAKE_BRAKE);
+    frontLeftGroup.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    frontRightGroup.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    backLeftGroup.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    backRightGroup.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
     ig1.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
     ig2.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
     ig3.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
