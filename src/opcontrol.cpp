@@ -65,6 +65,7 @@ enum class intakeState
     SCORING_BOTTOM,
     SCORING_MID,
     SCORING_TOP,
+    REJECT,
     OFF
 };
 enum class teamColor
@@ -338,6 +339,11 @@ void umbc::Robot::opcontrol()
 
         if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)) {
             sortDisabled = !sortDisabled;
+            if(sortDisabled){
+                if(iState == intakeState::REJECT){
+                    set_intake_mode(iState, ig1, ig2, ig3, ig4, ig5);
+                }
+            }
         }
 
         //Read optical sensor hue value
@@ -361,6 +367,7 @@ void umbc::Robot::opcontrol()
                     // Sort balls by team color and adjust intake accordingly
                     if (ballQueue.front().color != teamcolor) {
                         // Opponent ball detected: drive eject/aux motor to expel
+                        iState = intakeState::REJECT; // Temporary state to trigger motor update without changing intake state
                         ig5.move_velocity(-600);
                     } else {
                         // Friendly ball detected: ensure intake motors run
