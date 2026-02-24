@@ -243,7 +243,7 @@ void umbc::Robot::opcontrol()
     
     // Pneumatics
     pros::ADIPort right(1, E_ADI_DIGITAL_OUT);
-    pros::ADIPort left(2, E_ADI_DIGITAL_OUT);
+    pros::ADIPort left(3, E_ADI_DIGITAL_OUT);
     
 
     while (1) {
@@ -318,15 +318,15 @@ void umbc::Robot::opcontrol()
         if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
             right.set_value(true);
             left.set_value(true);
-            ig7.move_velocity(600);
-            ig6.move_velocity(-600);
+            ig7.move_velocity(450);
+            ig6.move_velocity(-450);
         }
 
         if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN)) {
             right.set_value(false);
             left.set_value(false);
-            ig7.move_velocity(600);
-            ig6.move_velocity(-600);
+            ig7.move_velocity(450);
+            ig6.move_velocity(-450);
         }
 
         if (controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X)) {
@@ -386,7 +386,9 @@ void umbc::Robot::opcontrol()
                 }
                 ballQueue.pop();
             }
-        }
+            if(ballQueue.empty() && iState == intakeState::REJECT){
+                set_intake_mode(iState, ig1, ig2, ig3, ig4, ig5);
+            }
         }
 
         if(controller_master->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT)){
