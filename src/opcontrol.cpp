@@ -77,12 +77,63 @@ struct ball {
     teamColor color;
     uint32_t timeDetected;
 };
+struct BallDetection {
+    int   id;
+    int   cls;       // 0=BLUE 1=RED
+    float yaw;       // degrees, + = right of center
+    float pitch;     // degrees, + = above center
+    float area;      // 0.0-1.0 normalized box area (proxy for distance)
+    float conf;      // 0.0-1.0 confidence
+};
 
 // ===== Mode Functions =====
 // These functions set motor velocities and update intake state.
 // Can be called multiple times from different contexts.
 
 /// Sets motors for intake mode (draws in balls)
+
+// --- Minimal JSON parser — no external libs needed ---
+static float parse_field(const std::string& json, const std::string& key) {
+    std::string search = "\"" + key + "\":";
+    size_t pos = json.find(search);
+    if (pos == std::string::npos) return 0.0f;
+    pos += search.size();
+    return std::stof(json.substr(pos, 12));
+}
+
+static int parse_int_field(const std::string& json, const std::string& key) {
+    return (int)parse_field(json, key);
+}
+
+static std::vector<BallDetection> parse_detections(const std::string& line) {
+    std::vector<BallDetection> results;
+
+    // Find the detections array
+    size_t arr_start = line.find("\"d\":[");
+    if (arr_start == std::string::npos) return results;
+    arr_start += 5;
+
+    size_t pos = arr_start;
+    while (pos < line.size()) {
+        size_t obj_start = line.find('{', pos);
+        size_t obj_end   = line.find('}', obj_start);
+        if (obj_start == std::string::npos || obj_end == std::string::npos) break;
+
+        std::string obj = line.substr(obj_start, obj_end - obj_start + 1);
+        BallDetection d;
+        d.id    = parse_int_field(obj, "id");
+        d.cls   = parse_int_field(obj, "cls");
+        d.yaw   = parse_field(obj, "yaw");
+        d.pitch = parse_field(obj, "pit");
+        d.area  = parse_field(obj, "area");
+        d.conf  = parse_field(obj, "conf");
+        results.push_back(d);
+
+        pos = obj_end + 1;
+    }
+    return results;
+}
+
 static void set_intake_mode(intakeState &iState,
                             pros::Motor &ig1,
                             pros::Motor &ig2,
@@ -196,6 +247,7 @@ void umbc::Robot::opcontrol()
     
 
     // Controller references
+    
     umbc::Controller *controller_master = this->controller_master;
     umbc::Controller *controller_partner = this->controller_partner;
 
