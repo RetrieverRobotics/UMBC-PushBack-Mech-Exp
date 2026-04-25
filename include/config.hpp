@@ -1,3 +1,4 @@
+#pragma once
 #include "api.h"
 #include "pros/adi.hpp"
 #include "pros/misc.h"
@@ -12,16 +13,16 @@ using namespace std;
 namespace ports
 {
     constexpr int radio = 21;
-    constexpr int optical = 17;
+    constexpr int optical = 16;
     constexpr int feeder = 18;
-    constexpr int pneumatic = 1;
+    constexpr int pneumatic = 2;
     namespace intake
     {
         constexpr int top_roller = 11;
         constexpr int back_roller = 12;
-        constexpr int bottom_outside_roller = 13;
-        constexpr int middle_roller = 14;
-        constexpr int bottom_roller = 16;
+        constexpr int bottom_outside_roller = 17;
+        constexpr int middle_roller = 13;
+        constexpr int bottom_roller = 14;
     }
     namespace drivetrain
     {
@@ -39,15 +40,15 @@ namespace ports
         }
         namespace backLeft
         {
-            constexpr int back_left_top = -4;
-            constexpr int back_left_middle = 5;
-            constexpr int back_left_bottom = -6;
+            constexpr int back_left_top = -20;
+            constexpr int back_left_middle = 19;
+            constexpr int back_left_bottom = -10;
         }
         namespace backRight
         {
-            constexpr int back_right_top = 20;
-            constexpr int back_right_middle = -19;
-            constexpr int back_right_bottom = 10;
+            constexpr int back_right_top = 4;
+            constexpr int back_right_middle = -5;
+            constexpr int back_right_bottom = 6;
         }
     }
 }
@@ -64,11 +65,12 @@ namespace constants
     constexpr double intakeGearMultiplier = 600;
     constexpr double controllerMax = 127.0;
     constexpr int opcontrol_delay_ms = 20;
-    constexpr int detectionThreshold = 3;
-    constexpr uint32_t travelDelay = 500;
-    constexpr uint32_t rejectDuration = 200;
-    constexpr std::pair<int, int> redRange = {1, 30};
+    constexpr int detectionThreshold = 1;
+    constexpr uint32_t travelDelay = 250;
+    constexpr uint32_t rejectDuration = 150;
+    constexpr std::pair<int, int> redRange = {0, 40};
     constexpr std::pair<int, int> blueRange = {200, 255};
+    constexpr uint32_t distance  = 5;
 }
 
 namespace intake
@@ -88,18 +90,18 @@ namespace intake
     struct IntakeConfig
     {
         intakeState state;
-        bool p1;
+        int p1;
         int v1, v2, v3, v4, v5, v6;
     };
 
-    constexpr IntakeConfig INTAKE_MODE = {intakeState::INTAKE, 0, -600, -600, -600, -600, 600, 0};
-    constexpr IntakeConfig INTAKE_FEED_MODE = {intakeState::INTAKEFEEDER, 1, -600, -600, -600, -600, 600, 600};
-    constexpr IntakeConfig CYCLE_MODE = {intakeState::CYCLE, 0, 600, -600, -600, -600, 600, 0};
-    constexpr IntakeConfig SCORING_BOTTOM = {intakeState::SCORING_BOTTOM, 0, 300, 300, -300, 0, 0, 0};
-    constexpr IntakeConfig SCORING_MID = {intakeState::SCORING_MID, 0, 600, -600, -600, 600, 0, 0};
-    constexpr IntakeConfig SCORING_TOP = {intakeState::SCORING_TOP, 0, 300, -300, -300, -300, -300, 0};
-    constexpr IntakeConfig REJECT_MODE = {intakeState::REJECT, 0, 600, -600, -600, -600, 600, 0};
-    constexpr IntakeConfig REJECT_FEED_MODE = {intakeState::REJECTWITHFEED, 1, 600, -600, -600, -600, 600, 600};
+    constexpr IntakeConfig INTAKE_MODE = {intakeState::INTAKE, 0, 600, -600, -600, -600, 600, 0};
+    constexpr IntakeConfig INTAKE_FEED_MODE = {intakeState::INTAKEFEEDER, 1, -600, -600, -600, -600, 600, -600};
+    constexpr IntakeConfig CYCLE_MODE = {intakeState::CYCLE, 0, 600, -600, -600, -600, -600, 0};
+    constexpr IntakeConfig SCORING_BOTTOM = {intakeState::SCORING_BOTTOM, 0, 300, -300, 300, 0, -300, 0};
+    constexpr IntakeConfig SCORING_MID = {intakeState::SCORING_MID, 0, 0, -600, -600, 600, -300, 0};
+    constexpr IntakeConfig SCORING_TOP = {intakeState::SCORING_TOP, 0, -600, -600, -600, -600, -600, 0};
+    constexpr IntakeConfig REJECT_MODE = {intakeState::REJECT, 0, -600, -600, -600, -600, 600, 0};
+    constexpr IntakeConfig REJECT_FEED_MODE = {intakeState::REJECTWITHFEED, 1, -600, -600, -600, -600, 600, -600};
     constexpr IntakeConfig OFF_MODE = {intakeState::OFF, 0, 0, 0, 0, 0, 0, 0};
 
 }

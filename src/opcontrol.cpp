@@ -7,7 +7,7 @@
  */
 
 #include "api.h"
-#include "pros/adi.hpp"
+#include "pros/adi.hpp" 
 #include "pros/misc.h"
 #include "pros/motors.h"
 #include "pros/motors.hpp"
@@ -25,7 +25,8 @@ using namespace std;
 
 void umbc::Robot::opcontrol()
 {
-
+    umbc::Controller *controller_master = this->controller_master;
+    umbc::Controller *controller_partner = this->controller_partner;
     Hardware hw;
     hw.configure();
     BallTracker balltracker;
@@ -33,11 +34,11 @@ void umbc::Robot::opcontrol()
     double lf, rf, lb, rb;
     intake::intakeState iState = intake::intakeState::OFF;
     uint32_t lastMotorCheck = 0;
-    
+    apply_intake_config(iState, hw, intake::OFF_MODE);
     while (1)
     {
         // Joystick input
-        double x = (controller_master->get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X) / constants::controllerMax);
+        double x = -(controller_master->get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X) / constants::controllerMax);
         double y = (controller_master->get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) / constants::controllerMax);
         double turn = (controller_master->get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X) / constants::controllerMax);
 
@@ -57,6 +58,10 @@ void umbc::Robot::opcontrol()
             if (controller_master->get_digital(pros::E_CONTROLLER_DIGITAL_B))
             {
                 apply_intake_config(iState, hw, intake::SCORING_BOTTOM);
+            }
+            else if (controller_master->get_digital(pros::E_CONTROLLER_DIGITAL_R2))
+            {
+                apply_intake_config(iState, hw, intake::INTAKE_MODE);
             }
 
             else if (controller_master->get_digital(pros::E_CONTROLLER_DIGITAL_Y))
@@ -102,13 +107,12 @@ void umbc::Robot::opcontrol()
                     motor.get_faults();
                     if (errno == ENODEV)
                     {
-                        controller_master->print(0, 0, "DISCONNECT PORT: %d", i);
+                        controller_master->set_text(0, 0, std::string("Disconnect: ") + std::to_string(ENODEV));
                         controller_master->rumble(".");
                     }
                 }
             }
         }
-        // delay
         pros::Task::delay(this->opcontrol_delay_ms);
     }
 }

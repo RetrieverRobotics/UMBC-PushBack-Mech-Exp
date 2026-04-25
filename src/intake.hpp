@@ -1,7 +1,6 @@
 #pragma once
 
 #include "hardware.hpp"
-#include "config.hpp"
 
 static void apply_intake_config(intake::intakeState &iState, Hardware &hw, const intake::IntakeConfig &cfg)
 {

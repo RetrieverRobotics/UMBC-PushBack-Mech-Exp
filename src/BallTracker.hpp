@@ -3,9 +3,14 @@
 #include "api.h"
 #include "pros/optical.hpp"
 #include "intake.hpp"
+#include "pros/adi.hpp"
+#include "pros/misc.h"
+#include "pros/motors.h"
+#include "pros/motors.hpp"
 
 #include <queue>
 
+using namespace pros;
 enum class teamColor {
     RED,
     BLUE,
@@ -35,10 +40,11 @@ struct BallTracker {
         if (sortDisabled) return;
 
         int hue = optical.get_hue();
+        int distance = optical.get_proximity();
         bool isOpponentColor = isOpponent(hue);
-
+        pros::screen::print(pros::E_TEXT_MEDIUM, 3, "Distance: %d", distance);
         // Confidence + edge detection: only push when we hit the threshold for the first time
-        if (isOpponentColor) {
+        if (isOpponentColor && distance == 255) {
             consecutiveDetections++;
         } else {
             consecutiveDetections = 0;

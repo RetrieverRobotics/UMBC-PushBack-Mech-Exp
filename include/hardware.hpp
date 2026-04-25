@@ -62,7 +62,7 @@ struct Hardware {
             m->set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
             m->set_gearing(constants::intakeGearColor);
         }
-
+        pneumatic.set_value(0);
         optical.set_led_pwm(100);
     }
 };
